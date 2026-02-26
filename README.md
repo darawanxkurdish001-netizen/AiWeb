@@ -1,7 +1,7 @@
 import telebot
 
 TOKEN = "8338253518:AAGTtAere5kFU1ZDCPKqXNXOx1G7KOqkN7U"
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
 
 @bot.message_handler(content_types=['new_chat_members'])
 def welcome(message):
@@ -9,7 +9,7 @@ def welcome(message):
     
     for user in message.new_chat_members:
         name = user.first_name
-        mention = f"[{name}](tg://user?id={user.id})"
+        mention = f"<a href='tg://user?id={user.id}'>{name}</a>"
         members = bot.get_chat_members_count(message.chat.id)
         
         text = f"""┏•━•━•━•━◎ ━•━•━•━◎•━•━┓
@@ -26,6 +26,6 @@ def welcome(message):
 {members}
 ┏━━━━━━◎──────┓"""
         
-        bot.send_message(message.chat.id, text, parse_mode="Markdown")
+        bot.send_message(message.chat.id, text)
 
-bot.polling()
+bot.infinity_polling()
