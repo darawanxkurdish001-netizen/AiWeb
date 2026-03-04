@@ -1,31 +1,27 @@
-import telebot
+from kivy.app import App
+from kivy.uix.image import Image
+from kivy.clock import Clock
+from kivy.graphics.texture import Texture
+import cv2
+from ultralytics import YOLO
 
-TOKEN = "8338253518:AAGTtAere5kFU1ZDCPKqXNXOx1G7KOqkN7U"
-bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
+class CameraApp(App):
+    def build(self):
+        self.img = Image()
+        self.capture = cv2.VideoCapture(0)
+        self.model = YOLO("yolov8n.pt")
+        Clock.schedule_interval(self.update, 1.0/30.0)
+        return self.img
 
-@bot.message_handler(content_types=['new_chat_members'])
-def welcome(message):
-    group_name = message.chat.title
-    
-    for user in message.new_chat_members:
-        name = user.first_name
-        mention = f"<a href='tg://user?id={user.id}'>{name}</a>"
-        members = bot.get_chat_members_count(message.chat.id)
-        
-        text = f"""┏•━•━•━•━◎ ━•━•━•━◎•━•━┓
-💙┋بەخێربێیت بۆ گرووپی
-{group_name}
-┍┄┄┄┄༻❀༺┄┄┄┄┑
-❤┋ناووی بەڕێزت لە گرووپ
-{name}
-┍┄┄┄┄༻❀༺┄┄┄┄┑
-🖤┋هاشتاکی بەڕێزت لە گرووپ
-{mention}
-┍┄┄┄┄༻❀༺┄┄┄┄┑
-💛┋بەڕێزت کەسی ژمارە
-{members}
-┏━━━━━━◎──────┓"""
-        
-        bot.send_message(message.chat.id, text)
+    def update(self, dt):
+        ret, frame = self.capture.read()
+        if ret:
+            results = self.model(frame)
+            frame = results[0].plot()
 
-bot.infinity_polling()
+            buf = cv2.flip(frame, 0).tobytes()
+            texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
+            texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+            self.img.texture = texture
+
+CameraApp().run()
